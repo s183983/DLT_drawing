@@ -163,12 +163,12 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         '''
         
         file_name = filelist[0]
-        save_name = os.path.join(save_path,"skeletons_128",os.path.basename(file_name)).split('.')[0]+".png"
+        save_name = os.path.join(save_path,os.path.basename(file_name)).split('.')[0]+".png"
         print(os.path.basename(file_name))
         while os.path.isfile(save_name):
             filelist.pop(0)
             file_name = filelist[0]
-            save_name = os.path.join(save_path,"skeletons_128",os.path.basename(file_name)).split('.')[0]+".png"
+            save_name = os.path.join(save_path,os.path.basename(file_name)).split('.')[0]+".png"
         
         im = np.array(Image.open(file_name))
         scale_factor = min(1080/im.shape[0],1080/im.shape[1])
@@ -247,12 +247,12 @@ class Annotator(PyQt5.QtWidgets.QWidget):
     def reset_image(self):
                     
         file_name = self.filelist[0]
-        save_name = os.path.join(self.save_path,"skeletons_128",os.path.basename(file_name)).split('.')[0]+".png"
+        save_name = os.path.join(self.save_path,os.path.basename(file_name)).split('.')[0]+".png"
         
         while os.path.isfile(save_name):
             self.filelist.pop(0)
             file_name = self.filelist[0]
-            save_name = os.path.join(self.save_path,"skeletons_128",os.path.basename(file_name)).split('.')[0]+".png"
+            save_name = os.path.join(self.save_path,os.path.basename(file_name)).split('.')[0]+".png"
             
         self.file_name = file_name
         print(os.path.basename(file_name))
@@ -496,8 +496,6 @@ class Annotator(PyQt5.QtWidgets.QWidget):
                 self.executeZoom()
         elif self.activelyDrawing:
             self.oldAnn.append(self.annotationPix.copy())
-            self.oldResize128.append(self.resizePix128.copy())
-            self.oldResize256.append(self.resizePix256.copy())
             # print("oldAnn", len(self.oldAnn))
             self.activelyDrawing = False
             pixmap = qimage2ndarray.rgb_view(self.resizePix128.toImage())
@@ -505,8 +503,9 @@ class Annotator(PyQt5.QtWidgets.QWidget):
 
     def wheelEvent(self,event):
         scroll = np.sign(event.angleDelta().y())
-        if 1<self.penWidth+scroll<5000:
+        if 1<self.penWidth+scroll<25000:
             self.penWidth += scroll
+        self.drawCursorPoint(self.lastCursorPoint)
         self.update()
         
     def leaveEvent(self, event):
@@ -626,23 +625,12 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         self.update()
     
     def save_skelet(self):
-        label = qimage2ndarray.rgb_view(self.resizePix128.toImage())
+        label = qimage2ndarray.rgb_view(self.annotationPix.toImage())
         # print("file_name", os.path.basename(self.file_name))
         # print("skelet_name", os.path.basename(self.label_name))
         if label.sum() > 0:
-            new_file = os.path.join(self.save_path,"images",os.path.basename(self.file_name))
-            new_label = os.path.join(self.save_path,"labels",os.path.basename(self.label_name))
-            skelet128 = os.path.join(self.save_path,"skeletons_128",os.path.basename(self.label_name))
-            skelet256 = os.path.join(self.save_path,"skeletons_256",os.path.basename(self.label_name))
-            shutil.copy2(self.file_name, new_file)
-            shutil.copy2(self.label_name, new_label)
-            # np.savetxt(self.save_name,np.array(self.point_list))
-            # self.resizePix128.save(skelet128)
-            # self.resizePix256.save(skelet256)
-            pixmap128 = qimage2ndarray.rgb_view(self.resizePix128.toImage())
-            cv2.imwrite(skelet128,pixmap128)
-            pixmap256 = qimage2ndarray.rgb_view(self.resizePix256.toImage())
-            cv2.imwrite(skelet256,pixmap256)
+            save_name = os.path.join(self.save_path,os.path.basename(self.file_name))
+            cv2.imwrite(save_name,label)
             
     
     def reset_current_image(self):

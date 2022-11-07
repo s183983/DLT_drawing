@@ -22,29 +22,11 @@ from vtkmodules.vtkCommonColor import vtkNamedColors
 from annotator_label import Annotator
 from scipy.ndimage import gaussian_filter
 
-class KeyHelper(QtCore.QObject):
-    keyPressed = QtCore.pyqtSignal(QtCore.Qt.Key)
-
-    def __init__(self, window):
-        super().__init__(window)
-        self._window = window
-
-        self.window.installEventFilter(self)
-
-    @property
-    def window(self):
-        return self._window
-
-    def eventFilter(self, obj, event):
-        if obj is self.window and event.type() == PyQt5.QtCore.QEvent.KeyPress:
-            self.keyPressed.emit(event.key())
-        return super().eventFilter(obj, event)
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, filelist, label_path, save_path, parent=None):
         super(MainWindow,self).__init__(parent)
         self.setObjectName("MainWindow")
-        volShape = [960,960]
         self.frame = QtWidgets.QFrame()
         self.hl = QtWidgets.QHBoxLayout()
         
@@ -235,36 +217,43 @@ class MainWindow(QtWidgets.QMainWindow):
         pyqt_i = i+48
         self.annotator.keyPressEvent1(pyqt_i) 
         
-def button1_clicked():
-   print("Button 1 clicked")
+        
+        
+class KeyHelper(QtCore.QObject):
+    keyPressed = QtCore.pyqtSignal(QtCore.Qt.Key)
 
-def button2_clicked():
-   print("Button 2 clicked")  
+    def __init__(self, window):
+        super().__init__(window)
+        self._window = window
+
+        self.window.installEventFilter(self)
+
+    @property
+    def window(self):
+        return self._window
+
+    def eventFilter(self, obj, event):
+        if obj is self.window and event.type() == PyQt5.QtCore.QEvent.KeyPress:
+            self.keyPressed.emit(event.key())
+        return super().eventFilter(obj, event)
+  
     
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
 
 
-    path = "C:/Users/lowes/OneDrive/Skrivebord/DTU/8_semester/General_Interactive_Segmentation"
-    filelist = np.array(glob.glob(os.path.join(path,'benchmark/dataset/img',"*.jpg")))
+    path = "../VOC2012"
+    filelist = glob.glob(os.path.join(path,'JPEGImages',"*.jpg"))
                          
-    np.random.seed(69)
-    datasplit=[0.8,0.1,0.1]
-    N = len(filelist)
 
-    idx_perm = np.random.permutation(N)
-    i1 = int(N*datasplit[0])
-    i2 = int(N*(datasplit[0]+datasplit[1]))
-    # dataset_split[key]["train"] = idx_perm[:i1]
-    # dataset_split[key]["vali"] = idx_perm[i1:i2]
-    # dataset_split[key]["test"] = idx_perm[i2:]
-    files = filelist[idx_perm[i2:]].tolist()
-
-    label_path = ""#os.path.join(path, "CHAOS/labels")
+    label_path = glob.glob(os.path.join(path,'SegmentationObject'))
                          
-    save_path = os.path.join(path, "pascal_annotated_data")
+    save_path = os.path.join(path, "AnnotatedData")
+    
+    if not os.path.isdir(save_path):
+        os.mkdir(save_path)
 
-    window = MainWindow(files, label_path, save_path)
+    window = MainWindow(filelist, label_path, save_path)
     
     window.show()
     helper = KeyHelper(window.windowHandle())
